@@ -1,7 +1,7 @@
 {
   "name": "smai",
-  "version": "1.0.0",
-  "description": "Smithery API proxy with cookie management",
+  "version": "2.0.0",
+  "description": "Smithery API proxy with cookie pool management",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
@@ -12,12 +12,21 @@
   "engines": {
     "node": ">=18.0.0"
   },
+  "files": [
+    "src/**/*",
+    "vercel.js",
+    "server.js",
+    "config.json",
+    "public/**/*"
+  ],
   "dependencies": {},
   "keywords": [
     "api",
     "proxy",
     "smithery",
-    "openai"
+    "openai",
+    "cookie-management",
+    "vercel"
   ],
   "author": "",
   "license": "MIT"
