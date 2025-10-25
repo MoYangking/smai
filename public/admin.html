@@ -1,0 +1,422 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Smithery 代理管理</title>
+  <style>
+    :root { --bg: #070b1a; --panel: #0e1525; --border:#1b2a44; --fg:#e6edf3; --muted:#9fb0c3; --pri:#5b8cff; --pri2:#7aa6ff; --ok:#2ecc71; --warn:#f39c12; --err:#e74c3c; --glow: rgba(79,140,255,0.35); }
+    * { box-sizing: border-box; }
+    html,body { height:100%; }
+    body {
+      margin:0; color:var(--fg); font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+      background:
+        radial-gradient(1200px 600px at 10% -10%, rgba(79,140,255,.18), transparent 60%),
+        radial-gradient(900px 600px at 110% 10%, rgba(46,204,113,.10), transparent 60%),
+        linear-gradient(180deg, #090e1e 0%, #060a18 100%);
+      overflow-y:auto;
+    }
+    header {
+      position: sticky; top:0; z-index:10;
+      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
+      backdrop-filter: blur(8px);
+      border-bottom:1px solid var(--border);
+      box-shadow: 0 10px 30px rgba(0,0,0,.25);
+    }
+    .title { max-width: 1040px; margin: 0 auto; padding: 16px; display:flex; align-items:center; gap:12px; }
+    .logo {
+      width:34px; height:34px; border-radius:10px; display:grid; place-items:center;
+      background: radial-gradient(140% 140% at 30% 20%, var(--pri2), var(--pri) 50%, transparent 60%);
+      box-shadow: 0 0 0 1px var(--border), 0 6px 22px var(--glow);
+    }
+    .title h1 { margin:0; font-size:20px; letter-spacing:.2px; }
+    .title p { margin:0; color:var(--muted); font-size:12px; }
+    main { max-width:1040px; margin: 0 auto; padding: 18px; display:grid; grid-template-columns: 1fr; gap:16px; }
+    @media (min-width: 980px) { main { grid-template-columns: 1fr 1fr; } }
+    .card {
+      position: relative;
+      background: linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.02));
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+      overflow: hidden;
+    }
+    .card:before {
+      content:""; position:absolute; inset:0; pointer-events:none;
+      background: radial-gradient(600px 220px at -10% -20%, rgba(79,140,255,.15), transparent 60%);
+      opacity:.8;
+    }
+    .card h2 { margin:4px 0 10px; font-size:16px; display:flex; align-items:center; gap:8px; }
+    .row { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+    label { color:var(--muted); font-size:12px; }
+    input[type=text]{
+      width:100%; padding:10px 12px; border-radius:10px; border:1px solid #2a3a56; background:#0b1222; color:var(--fg); outline:none;
+      transition: border-color .2s, box-shadow .2s, background .2s;
+    }
+    input[type=text]:focus { border-color: #3e64ff; box-shadow: 0 0 0 .5px #3e64ff, 0 0 0 6px rgba(62,100,255,.12) inset; background: #0e152b; }
+    input[type=checkbox]{ transform: scale(1.12); accent-color: var(--pri); }
+    button{
+      position:relative; padding:10px 14px; border-radius:10px; border:1px solid #2a3a56; background:#13203a; color:var(--fg); cursor:pointer;
+      transition: transform .06s ease, box-shadow .2s, background .2s, border-color .2s;
+    }
+    button:hover{ box-shadow: 0 6px 16px rgba(79,140,255,.18); }
+    button:active{ transform: translateY(1px); }
+    button.primary {
+      background: linear-gradient(180deg, var(--pri2), var(--pri));
+      border-color: #355ecb;
+      box-shadow: 0 8px 24px rgba(79,140,255,.25);
+    }
+    button.ghost { background: transparent; }
+    .status{ font-size:12px; margin-left:6px; }
+    .ok{ color: var(--ok); }
+    .err{ color: var(--err); }
+    .list{ max-height: 280px; overflow:auto; border:1px dashed #2a3a56; border-radius:12px; padding:8px; background: rgba(14,21,37,.35); }
+    .pill{
+      display:inline-block; padding:4px 10px; border-radius:999px; border:1px solid #2a3a56; margin:4px 6px 0 0; font-size:12px; color:var(--muted);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
+    }
+    .muted{ color:var(--muted); font-size:12px; }
+    .footer{ text-align:center; color:var(--muted); font-size:12px; margin: 8px 0 12px; }
+    /* Toasts */
+    .toasts{ position: fixed; right: 16px; bottom: 16px; z-index: 50; display:flex; flex-direction:column; gap:8px; }
+    .toast{
+      min-width: 180px; max-width: 320px; padding:10px 12px; border-radius:10px; border:1px solid #27406a;
+      background: linear-gradient(180deg, rgba(46,204,113,.12), rgba(14,21,37,.5));
+      color:#b6f1c9; font-size:12px; box-shadow: 0 8px 24px rgba(0,0,0,.35);
+      animation: toast-in .18s ease-out, toast-out .2s ease-in 2.6s forwards;
+    }
+    .toast.err{
+      background: linear-gradient(180deg, rgba(231,76,60,.14), rgba(14,21,37,.5));
+      border-color: #5a2a2a; color: #ffd4d1;
+    }
+    @keyframes toast-in{ from{ transform: translateY(8px); opacity:0; } to{ transform: translateY(0); opacity:1; } }
+    @keyframes toast-out{ to{ transform: translateY(6px); opacity:0; } }
+  </style>
+  <script>
+    async function api(path, opts={}){
+      const r = await fetch(path, { headers:{'content-type':'application/json'}, ...opts });
+      const ct = r.headers.get('content-type')||'';
+      if (!ct.includes('application/json')) return {};
+      return await r.json();
+    }
+    function showToast(msg, isErr=false){
+      const wrap = document.getElementById('toasts');
+      if(!wrap) return;
+      const el = document.createElement('div');
+      el.className = 'toast' + (isErr ? ' err' : '');
+      el.textContent = msg;
+      wrap.appendChild(el);
+      setTimeout(()=>{ try{ wrap.removeChild(el); }catch{} }, 3000);
+    }
+    function setStatus(id, msg, isErr=false){
+      const el = document.getElementById(id);
+      if (el){
+        el.textContent = msg;
+        el.className = 'status ' + (isErr? 'err':'ok');
+        setTimeout(()=>{ el.textContent=''; }, 2800);
+      }
+      if (msg) showToast(msg, isErr);
+    }
+    async function load(){
+      // models
+      try{
+        const ms = await api('/v1/models');
+        const list = (ms && ms.data) ? ms.data : [];
+        document.getElementById('models-count').textContent = String(list.length);
+        const ul = document.getElementById('models-list'); ul.innerHTML='';
+        list.slice(0, 150).forEach(x=>{
+          const s = document.createElement('span'); s.className='pill'; s.textContent=x.id; ul.appendChild(s);
+        });
+      }catch(e){ setStatus('models-status','获取模型失败', true); }
+      // cookies
+      try{
+        const ck = await api('/admin/cookies');
+        document.getElementById('cookies').value = (ck && ck.cookies) ? ck.cookies : '';
+      }catch(e){ setStatus('cookies-status','读取 Cookies 失败', true); }
+    }
+    async function onSaveCookies(){
+      const btn = document.getElementById('btn-save-cookies');
+      btn && (btn.disabled = true);
+      const cookies = document.getElementById('cookies').value.trim();
+      const r = await api('/admin/cookies', { method:'POST', body: JSON.stringify({ cookies }) });
+      setStatus('cookies-status', r.ok? '已保存':'保存失败', !r.ok);
+      btn && (btn.disabled = false);
+    }
+    async function onRefresh(){
+      const btn = document.getElementById('btn-refresh');
+      btn && (btn.disabled = true, btn.dataset.txt = btn.textContent, btn.textContent = '刷新中...');
+      setStatus('models-status','刷新中...');
+      const r = await api('/v1/models/refresh', { method:'POST' });
+      setStatus('models-status', r && r.data ? '刷新成功':'刷新失败', !(r&&r.data));
+      btn && (btn.disabled = false, btn.textContent = btn.dataset.txt || '在线刷新模型');
+      await load();
+    }
+    async function onAddModel(){
+      const id = document.getElementById('model-id').value.trim();
+      const owned_by = document.getElementById('model-owned').value.trim() || 'custom';
+      const supportsReasoning = document.getElementById('model-reason').checked;
+      if(!id){ setStatus('models-status','请输入 Model ID', true); return; }
+      const r = await api('/admin/models/add', { method:'POST', body: JSON.stringify({ id, owned_by, supportsReasoning }) });
+      setStatus('models-status', r.ok? ('已添加，合计 '+r.count):'添加失败', !r.ok);
+      document.getElementById('model-id').value='';
+      await load();
+    }
+    async function onClear(){
+      const ok = confirm('确认清空本地模型缓存？');
+      if(!ok) return;
+      const r = await api('/admin/models/clear', { method:'POST' });
+      setStatus('models-status', r.ok? '已清空缓存':'操作失败', !r.ok);
+      await load();
+    }
+    window.addEventListener('DOMContentLoaded', load);
+  </script>
+</head>
+<body>
+  <header>
+    <div class="title">
+      <div class="logo">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+          <path d="M12 3l7 4v10l-7 4-7-4V7l7-4z" stroke="rgba(255,255,255,.9)" stroke-width="1.2"/>
+          <circle cx="12" cy="12" r="2.6" fill="rgba(255,255,255,.85)"/>
+        </svg>
+      </div>
+      <div>
+        <h1>Smithery 代理管理</h1>
+        <p>刷新模型 / 手动添加模型 / 管理 Cookies（文件存储，Docker 友好）</p>
+      </div>
+    </div>
+  </header>
+  <main>
+    <section class="card" style="grid-column: 1 / -1;">
+      <h2>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+          <path d="M4 7h16v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7z" stroke="currentColor" stroke-width="1.3"/>
+          <path d="M7 7V6a5 5 0 0 1 10 0v1" stroke="currentColor" stroke-width="1.3"/>
+        </svg>
+        Cookies 管理
+      </h2>
+      <label>完整 Cookie 串（示例：k1=v1; k2=v2）</label>
+      <input id="cookies" type="text" placeholder="在此粘贴 smithery.ai 所需 Cookie" />
+      <div class="row" style="margin-top:8px;">
+        <button id="btn-save-cookies" class="primary" onclick="onSaveCookies()">保存 Cookies</button>
+        <span id="cookies-status" class="status"></span>
+      </div>
+      <p class="muted">保存在 JSON 文件（后端转发 smithery.ai 时自动携带）。</p>
+    </section>
+
+    <section class="card">
+      <h2>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+          <path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="1.3" />
+        </svg>
+        模型缓存
+      </h2>
+      <div class="row"><div class="muted">数量：<b id="models-count">0</b></div></div>
+      <div id="models-list" class="list" style="margin-top:8px;"></div>
+      <div class="row" style="margin-top:8px;">
+        <button id="btn-refresh" class="primary" onclick="onRefresh()">在线刷新模型</button>
+        <button class="ghost" onclick="onClear()">清空缓存</button>
+        <span id="models-status" class="status"></span>
+      </div>
+      <p class="muted">刷新会抓取 smithery.ai 的脚本进行解析，成功后写入 JSON 文件。</p>
+    </section>
+
+    <section class="card">
+      <h2>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+          <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+        </svg>
+        手动添加模型
+      </h2>
+      <label>Model ID</label>
+      <input id="model-id" type="text" placeholder="例如：gpt-5-mini" />
+      <div class="row" style="margin-top:8px;">
+        <div style="flex:1;">
+          <label>Owned By</label>
+          <input id="model-owned" type="text" placeholder="例如：openai" />
+        </div>
+        <div class="row" style="gap:6px; align-items:center;">
+          <input id="model-reason" type="checkbox" />
+          <label>支持推理（生成 -minimal/-low/-medium/-high 衍生）</label>
+        </div>
+      </div>
+      <div class="row" style="margin-top:8px;">
+        <button class="primary" onclick="onAddModel()">添加模型</button>
+      </div>
+      <p class="muted">仅写入 JSON 缓存，供 /v1/models 返回；不会校验实际可用性。</p>
+    </section>
+  <!-- 设置 -->
+  <section class="card" id="card-settings">
+    <h2>设置</h2>
+    <div class="row">
+      <label style="min-width:90px;">Debug 模式</label>
+      <input id="cfg-debug" type="checkbox" />
+      <span class="muted">启用后写入调试日志</span>
+    </div>
+    <div class="row" style="margin-top:8px;">
+      <div style="flex:1;">
+        <label>Heartbeat 间隔 (ms)</label>
+        <input id="cfg-heartbeat" type="number" min="500" step="100" placeholder="15000" />
+      </div>
+      <div style="flex:1;">
+        <label>Flush Interval (ms)</label>
+        <input id="cfg-flush" type="number" min="10" max="200" step="10" placeholder="40" />
+      </div>
+      <div style="flex:1;">
+        <label>Auto Resume Max</label>
+        <input id="cfg-resume" type="number" min="1" max="5" step="1" placeholder="1" />
+      </div>
+    </div>
+    <div class="row" style="margin-top:8px;">
+      <div style="flex:1;">
+        <label>Port（只读）</label>
+        <input id="cfg-port" type="text" disabled />
+      </div>
+      <div style="flex:2;">
+        <label>Data Dir（只读）</label>
+        <input id="cfg-datadir" type="text" disabled />
+      </div>
+    </div>
+    <div class="row" style="margin-top:8px;">
+      <button id="btn-save-config" class="primary" onclick="onSaveConfig()">保存设置</button>
+      <span id="config-status" class="status"></span>
+    </div>
+    <p class="muted">说明：部分设置（如端口、数据目录）可能需要重启进程才可完全生效。</p>
+  </section>
+
+  <!-- 运行日志 -->
+  <section class="card" id="card-logs">
+    <h2>运行日志</h2>
+    <div class="row">
+      <label><input id="logs-auto" type="checkbox" /> 自动刷新</label>
+      <label>最大条数</label>
+      <input id="logs-limit" type="number" value="200" min="50" max="2000" step="50" style="width:120px" />
+      <label>级别</label>
+      <select id="logs-level" style="padding:8px 10px; border-radius:10px; border:1px solid #2a3a56; background:#0b1222; color:var(--fg);">
+        <option value="all">全部</option>
+        <option value="debug">debug</option>
+        <option value="info">info</option>
+        <option value="error">error</option>
+      </select>
+      <button class="primary" id="btn-logs-refresh" onclick="refreshLogs(true)">刷新</button>
+      <button class="ghost" id="btn-logs-clear" onclick="onClearLogs()">清空</button>
+      <button class="ghost" id="btn-logs-copy" onclick="onCopyLogs()">复制</button>
+      <span id="logs-status" class="status"></span>
+    </div>
+    <div id="logs-list" class="list" style="margin-top:8px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size:12px; line-height:1.45;"></div>
+  </section>
+
+  </main>
+  <div class="footer">© Smithery Node Proxy</div>
+  <div id="toasts" class="toasts"></div>
+
+  <script>
+    async function loadConfigUI(){
+      try{
+        const cfg = await api('/admin/config');
+        if(!cfg) return;
+        const s = (id)=>document.getElementById(id);
+        s('cfg-debug').checked = !!cfg.debug;
+        s('cfg-heartbeat').value = Number(cfg.heartbeatMs||15000);
+        s('cfg-flush').value = Number(cfg.flushIntervalMs||40);
+        s('cfg-resume').value = Number(cfg.autoResumeMax||1);
+        s('cfg-port').value = String(cfg.port||8787);
+        s('cfg-datadir').value = String(cfg.dataDir||'');
+      }catch(e){
+        setStatus('config-status','读取设置失败', true);
+      }
+    }
+    async function onSaveConfig(){
+      const body = {
+        debug: document.getElementById('cfg-debug').checked,
+        heartbeatMs: Number(document.getElementById('cfg-heartbeat').value),
+        flushIntervalMs: Number(document.getElementById('cfg-flush').value),
+        autoResumeMax: Number(document.getElementById('cfg-resume').value)
+      };
+      const r = await api('/admin/config', { method:'POST', body: JSON.stringify(body) });
+      setStatus('config-status', r && r.ok ? '已保存' : '保存失败', !(r&&r.ok));
+      await loadConfigUI();
+    }
+
+    // 日志
+    let LOGS_LAST_TS = 0;
+    let LOGS_TIMER = null;
+    function formatTime(ts){
+      try{
+        const d = new Date(Number(ts)||Date.now());
+        const pad = (n)=>String(n).padStart(2,'0');
+        return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+      }catch{ return String(ts); }
+    }
+    function escapeHtml(s){ return String(s).replace(/[&<>"]/g, c => ({'&':'&','<':'<','>':'>','"':'"'}[c])); }
+    function renderLogs(items, append=true){
+      const box = document.getElementById('logs-list');
+      const levelFilter = (document.getElementById('logs-level').value)||'all';
+      if(!append) box.innerHTML = '';
+      for(const it of items||[]){
+        if(levelFilter!=='all' && String(it.level)!==levelFilter) continue;
+        const line = document.createElement('div');
+        const levelColor = it.level==='error' ? '#ffd4d1' : it.level==='debug' ? '#b6d0ff' : '#b6f1c9';
+        line.style.whiteSpace = 'pre-wrap';
+        line.style.borderBottom = '1px dashed #2a3a56';
+        line.style.padding = '4px 6px';
+        line.innerHTML = `[${formatTime(it.ts)}] <span style="color:${levelColor};border:1px solid #2a3a56;border-radius:999px;padding:0 6px;display:inline-block;min-width:52px;text-align:center;">${it.level||''}</span> ${escapeHtml(it.message||'')}` + (it.meta ? '  ' + `<span style="color:#9fb0c3">meta:</span> <span>${escapeHtml(JSON.stringify(it.meta))}</span>` : '');
+        box.appendChild(line);
+        if(!LOGS_LAST_TS || it.ts>LOGS_LAST_TS) LOGS_LAST_TS = it.ts;
+      }
+      const max = Number(document.getElementById('logs-limit').value)||200;
+      while (box.childNodes.length > max) box.removeChild(box.firstChild);
+      box.scrollTop = box.scrollHeight;
+    }
+    async function refreshLogs(manual=false){
+      try{
+        const limit = Number(document.getElementById('logs-limit').value)||200;
+        const qs = LOGS_LAST_TS ? `?since=${LOGS_LAST_TS}&limit=${limit}` : `?limit=${limit}`;
+        const r = await api('/admin/logs'+qs);
+        const list = (r && r.logs) ? r.logs : [];
+        renderLogs(list, true);
+        setStatus('logs-status', manual ? '已刷新' : '', false);
+      }catch(e){
+        setStatus('logs-status','获取日志失败', true);
+      }
+    }
+    function startLogsAuto(){
+      if (LOGS_TIMER) return;
+      LOGS_TIMER = setInterval(()=>{ refreshLogs(false); }, 1500);
+    }
+    function stopLogsAuto(){
+      if (!LOGS_TIMER) return;
+      clearInterval(LOGS_TIMER); LOGS_TIMER = null;
+    }
+    async function onClearLogs(){
+      stopLogsAuto();
+      try{
+        await api('/admin/logs/clear', { method:'POST' });
+        LOGS_LAST_TS = 0;
+        renderLogs([], false);
+        setStatus('logs-status','已清空', false);
+      }catch{ setStatus('logs-status','清空失败', true); }
+    }
+    async function onCopyLogs(){
+      try{
+        const box = document.getElementById('logs-list');
+        const lines = Array.from(box.childNodes).map(n=>n.innerText);
+        await navigator.clipboard.writeText(lines.join('\\n'));
+        setStatus('logs-status','已复制', false);
+      }catch{ setStatus('logs-status','复制失败', true); }
+    }
+
+    window.addEventListener('DOMContentLoaded', async () => {
+      await loadConfigUI();
+      const initLimit = Number(document.getElementById('logs-limit').value)||200;
+      const r = await api('/admin/logs?limit=' + initLimit);
+      renderLogs((r&&r.logs)||[], false);
+      document.getElementById('logs-auto').addEventListener('change', (e)=>{
+        if (e.target.checked) startLogsAuto(); else stopLogsAuto();
+      });
+      document.getElementById('logs-level').addEventListener('change', ()=>{ LOGS_LAST_TS = 0; refreshLogs(true); });
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,8 @@
+{
+  "port": 8787,
+  "debug": false,
+  "heartbeatMs": 15000,
+  "flushIntervalMs": 40,
+  "autoResumeMax": 1,
+  "dataDir": "./data"
+}

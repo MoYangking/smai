@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node server.js --version)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
