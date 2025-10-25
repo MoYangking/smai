@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Bash(node server.js --version)"
+      "Bash(node server.js --version)",
+      "Bash(rm:*)"
     ],
     "deny": [],
     "ask": []

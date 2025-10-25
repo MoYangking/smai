@@ -6,15 +6,13 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node server.js",
-    "build": "echo 'No build step required'",
-    "vercel-build": "echo 'Build complete'"
+    "build": "echo 'No build step required'"
   },
   "engines": {
     "node": ">=18.0.0"
   },
   "files": [
     "src/**/*",
-    "vercel.js",
     "server.js",
     "config.json",
     "public/**/*"
@@ -25,8 +23,7 @@
     "proxy",
     "smithery",
     "openai",
-    "cookie-management",
-    "vercel"
+    "cookie-management"
   ],
   "author": "",
   "license": "MIT"
