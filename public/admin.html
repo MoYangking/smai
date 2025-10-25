@@ -134,6 +134,8 @@
         const ck = await api('/admin/cookies');
         document.getElementById('cookies').value = (ck && ck.cookies) ? ck.cookies : '';
       }catch(e){ setStatus('cookies-status','读取 Cookies 失败', true); }
+      // cookie pool
+      await refreshCookiePool();
     }
     async function onSaveCookies(){
       const btn = document.getElementById('btn-save-cookies');
@@ -169,6 +171,210 @@
       setStatus('models-status', r.ok? '已清空缓存':'操作失败', !r.ok);
       await load();
     }
+
+    // Cookie Pool Management Functions
+    async function refreshCookiePool() {
+      try {
+        const poolData = await api('/admin/cookie-pool');
+        if (!poolData) {
+          document.getElementById('pool-count').textContent = '0';
+          document.getElementById('current-index').textContent = '无';
+          document.getElementById('cookie-pool-list').innerHTML = '<div class="muted" style="text-align: center; padding: 20px;">暂无 Cookie，请添加</div>';
+          return;
+        }
+
+        document.getElementById('pool-count').textContent = String(poolData.total || 0);
+
+        if (poolData.currentIndex >= 0 && poolData.current) {
+          document.getElementById('current-index').textContent = `第 ${poolData.currentIndex + 1} 个`;
+        } else {
+          document.getElementById('current-index').textContent = '无';
+        }
+
+        const listEl = document.getElementById('cookie-pool-list');
+        listEl.innerHTML = '';
+
+        if (!poolData.cookies || poolData.cookies.length === 0) {
+          listEl.innerHTML = '<div class="muted" style="text-align: center; padding: 20px;">暂无 Cookie，请添加</div>';
+          return;
+        }
+
+        poolData.cookies.forEach((cookie, index) => {
+          const itemEl = document.createElement('div');
+          itemEl.style.cssText = `
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 12px;
+            margin: 4px 0;
+            border: 1px solid #2a3a56;
+            border-radius: 8px;
+            background: ${cookie.isCurrent ? 'rgba(46,204,113,.1)' : 'rgba(14,21,37,.35)'};
+            ${cookie.isCurrent ? 'border-color: #27ae60;' : ''}
+          `;
+
+          const infoEl = document.createElement('div');
+          infoEl.style.cssText = 'flex: 1; margin-right: 12px;';
+
+          const indexEl = document.createElement('span');
+          indexEl.style.cssText = `
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            background: ${cookie.isCurrent ? '#27ae60' : '#3498db'};
+            color: white;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 20px;
+            font-size: 12px;
+            margin-right: 8px;
+          `;
+          indexEl.textContent = index + 1;
+
+          const textEl = document.createElement('span');
+          textEl.style.cssText = 'font-family: monospace; font-size: 12px; color: #b6d0ff;';
+          textEl.textContent = cookie.preview || 'Cookie 内容太长';
+          if (cookie.preview && cookie.preview.endsWith('...')) {
+            textEl.title = '完整内容：' + cookie.preview;
+          }
+
+          infoEl.appendChild(indexEl);
+          infoEl.appendChild(textEl);
+
+          const removeBtn = document.createElement('button');
+          removeBtn.textContent = '移除';
+          removeBtn.style.cssText = `
+            padding: 4px 8px;
+            border: 1px solid #e74c3c;
+            background: rgba(231,76,60,.1);
+            color: #e74c3c;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+          `;
+          removeBtn.onclick = () => onRemoveCookieFromPool(cookie.preview);
+
+          itemEl.appendChild(infoEl);
+          itemEl.appendChild(removeBtn);
+          listEl.appendChild(itemEl);
+        });
+
+      } catch (e) {
+        setStatus('pool-status', '获取 Cookie 池失败', true);
+        console.error('Cookie pool error:', e);
+      }
+    }
+
+    async function onAddCookieToPool() {
+      const cookieInput = document.getElementById('new-cookie');
+      const cookie = cookieInput.value.trim();
+
+      if (!cookie) {
+        setStatus('add-cookie-status', '请输入 Cookie', true);
+        return;
+      }
+
+      try {
+        const result = await api('/admin/cookie-pool/add', {
+          method: 'POST',
+          body: JSON.stringify({ cookies: cookie })
+        });
+
+        if (result.ok) {
+          setStatus('add-cookie-status', `已添加，池中共 ${result.total} 个 Cookie`, false);
+          cookieInput.value = '';
+          await refreshCookiePool();
+        } else {
+          setStatus('add-cookie-status', '添加失败', true);
+        }
+      } catch (e) {
+        setStatus('add-cookie-status', '添加失败', true);
+        console.error('Add cookie error:', e);
+      }
+    }
+
+    async function onRemoveCookieFromPool(cookiePreview) {
+      if (!confirm(`确定要移除这个 Cookie 吗？\n${cookiePreview}`)) {
+        return;
+      }
+
+      try {
+        const result = await api(`/admin/cookie-pool/remove?cookie=${encodeURIComponent(cookiePreview)}`, {
+          method: 'DELETE'
+        });
+
+        if (result.ok) {
+          setStatus('pool-status', `已移除，剩余 ${result.total} 个 Cookie`, false);
+          await refreshCookiePool();
+        } else {
+          setStatus('pool-status', '移除失败', true);
+        }
+      } catch (e) {
+        setStatus('pool-status', '移除失败', true);
+        console.error('Remove cookie error:', e);
+      }
+    }
+
+    async function onRotateCookie() {
+      try {
+        const result = await api('/admin/cookie-pool/rotate', {
+          method: 'POST'
+        });
+
+        if (result.ok) {
+          setStatus('pool-status', `已轮换到第 ${result.index + 1} 个 Cookie`, false);
+          await refreshCookiePool();
+          await load(); // 刷新当前cookie
+        } else {
+          setStatus('pool-status', result.message || '轮换失败', true);
+        }
+      } catch (e) {
+        setStatus('pool-status', '轮换失败', true);
+        console.error('Rotate cookie error:', e);
+      }
+    }
+
+    async function onRandomCookie() {
+      try {
+        const result = await api('/admin/cookie-pool/random', {
+          method: 'POST'
+        });
+
+        if (result.ok) {
+          setStatus('pool-status', `已随机选择第 ${result.index + 1} 个 Cookie`, false);
+          await refreshCookiePool();
+          await load(); // 刷新当前cookie
+        } else {
+          setStatus('pool-status', result.message || '随机选择失败', true);
+        }
+      } catch (e) {
+        setStatus('pool-status', '随机选择失败', true);
+        console.error('Random cookie error:', e);
+      }
+    }
+
+    async function onClearCookiePool() {
+      if (!confirm('确定要清空整个 Cookie 池吗？这将删除所有已添加的 Cookie！')) {
+        return;
+      }
+
+      try {
+        const result = await api('/admin/cookie-pool/clear', {
+          method: 'DELETE'
+        });
+
+        if (result.ok) {
+          setStatus('pool-status', 'Cookie 池已清空', false);
+          await refreshCookiePool();
+        } else {
+          setStatus('pool-status', '清空失败', true);
+        }
+      } catch (e) {
+        setStatus('pool-status', '清空失败', true);
+        console.error('Clear cookie pool error:', e);
+      }
+    }
+
     window.addEventListener('DOMContentLoaded', load);
   </script>
 </head>
@@ -194,15 +400,61 @@
           <path d="M4 7h16v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7z" stroke="currentColor" stroke-width="1.3"/>
           <path d="M7 7V6a5 5 0 0 1 10 0v1" stroke="currentColor" stroke-width="1.3"/>
         </svg>
-        Cookies 管理
+        当前 Cookie 管理
       </h2>
-      <label>完整 Cookie 串（示例：k1=v1; k2=v2）</label>
+      <label>当前使用的 Cookie（示例：k1=v1; k2=v2）</label>
       <input id="cookies" type="text" placeholder="在此粘贴 smithery.ai 所需 Cookie" />
       <div class="row" style="margin-top:8px;">
-        <button id="btn-save-cookies" class="primary" onclick="onSaveCookies()">保存 Cookies</button>
+        <button id="btn-save-cookies" class="primary" onclick="onSaveCookies()">保存当前 Cookie</button>
         <span id="cookies-status" class="status"></span>
       </div>
-      <p class="muted">保存在 JSON 文件（后端转发 smithery.ai 时自动携带）。</p>
+      <p class="muted">这是当前正在使用的 Cookie，保存在 JSON 文件中（后端转发请求时自动携带）。</p>
+    </section>
+
+    <section class="card" style="grid-column: 1 / -1;">
+      <h2>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+          <path d="M19 11h-6V5h-2v6H5v2h6v6h2v-6h6z" stroke="currentColor" stroke-width="1.3"/>
+          <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.3"/>
+        </svg>
+        Cookie 池管理
+      </h2>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+        <div>
+          <label>添加新 Cookie 到池</label>
+          <input id="new-cookie" type="text" placeholder="输入要添加的 Cookie" />
+          <div class="row" style="margin-top:8px;">
+            <button class="primary" onclick="onAddCookieToPool()">添加到池</button>
+            <span id="add-cookie-status" class="status"></span>
+          </div>
+        </div>
+
+        <div>
+          <label>快速操作</label>
+          <div class="row" style="margin-top:8px; gap: 8px;">
+            <button onclick="onRotateCookie()">轮换 Cookie</button>
+            <button onclick="onRandomCookie()">随机选择</button>
+            <button onclick="onClearCookiePool()" style="background: var(--err); border-color: var(--err);">清空池</button>
+            <span id="pool-status" class="status"></span>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-bottom: 12px;">
+        <div class="row">
+          <div class="muted">池中 Cookie 数量：<b id="pool-count">0</b></div>
+          <div class="muted">当前使用的 Cookie：<b id="current-index">无</b></div>
+          <button class="ghost" onclick="onRefreshCookiePool()">刷新状态</button>
+        </div>
+      </div>
+
+      <label>Cookie 池列表</label>
+      <div id="cookie-pool-list" class="list" style="margin-top:8px; max-height: 200px;">
+        <div class="muted" style="text-align: center; padding: 20px;">暂无 Cookie，请添加</div>
+      </div>
+
+      <p class="muted">Cookie 池支持多个 Cookie 管理和自动轮换。当请求失败时会自动切换到下一个可用的 Cookie。</p>
     </section>
 
     <section class="card">

@@ -149,9 +149,15 @@ if (process.env.VERCEL) {
     const cookieManager = new CookieManager(cfg.dataDir);
     await store.ensureDir();
 
-    const url = new URL(req.url, `http://${req.headers.host}`);
+    // For Vercel, we need to handle the URL parsing carefully
+    const protocol = req.headers['x-forwarded-proto'] || 'http';
+    const host = req.headers['x-forwarded-host'] || req.headers.host || 'localhost';
+    const url = new URL(req.url, `${protocol}://${host}`);
     const p = url.pathname;
     const m = req.method.toUpperCase();
+
+    // Add basic request logging for Vercel
+    console.log(`[Vercel] ${m} ${p}`);
 
     if (m === 'OPTIONS') {
       res.writeHead(204, {
@@ -171,21 +177,73 @@ if (process.env.VERCEL) {
       if (p === '/v1/models' && m === 'GET') {
         return await handleList(res, store);
       }
+      if (p === '/v1/models/refresh' && m === 'POST') {
+        return await handleRefresh(res, store);
+      }
 
-      // Admin routes (limited for Vercel)
+      // Cookie Management Routes
       if (p === '/admin/cookies' && m === 'GET') {
         return await handleGetCookies(res, store);
       }
+      if (p === '/admin/cookies' && m === 'POST') {
+        return await handleSetCookies(req, res, store);
+      }
+
+      // Cookie Pool Management Routes
       if (p === '/admin/cookie-pool' && m === 'GET') {
         return await handleGetCookiePool(req, res, cookieManager);
       }
+      if (p === '/admin/cookie-pool/add' && m === 'POST') {
+        return await handleAddToCookiePool(req, res, cookieManager);
+      }
+      if (p === '/admin/cookie-pool/rotate' && m === 'POST') {
+        return await handleRotateCookie(req, res, cookieManager);
+      }
+      if (p === '/admin/cookie-pool/random' && m === 'POST') {
+        return await handleRandomCookie(req, res, cookieManager);
+      }
+
+      // Settings and Logs
+      if (p === '/admin/config' && m === 'GET') {
+        return await handleGetConfig(res, cfg);
+      }
+      if (p === '/admin/logs' && m === 'GET') {
+        return await handleGetLogs(req, res);
+      }
+
+      // Root path - return basic info
+      if (p === '/' && m === 'GET') {
+        res.writeHead(200, { 'content-type': 'application/json' });
+        res.end(JSON.stringify({
+          service: 'SMAI - Smithery API Proxy',
+          version: '2.0.0',
+          status: 'running',
+          endpoints: {
+            openai: '/v1/chat/completions, /v1/models',
+            admin: '/admin/cookies, /admin/cookie-pool'
+          }
+        }));
+        return;
+      }
 
       res.writeHead(404, { 'content-type': 'application/json' });
-      res.end(JSON.stringify({ error: 'not_found' }));
+      res.end(JSON.stringify({
+        error: 'not_found',
+        path: p,
+        method: m,
+        available_endpoints: [
+          'GET /',
+          'POST /v1/chat/completions',
+          'GET /v1/models',
+          'GET /admin/cookies',
+          'GET /admin/cookie-pool',
+          'GET /admin/config'
+        ]
+      }));
     } catch (e) {
       console.error('[vercel error]', e);
       res.writeHead(500, { 'content-type': 'application/json' });
-      res.end(JSON.stringify({ error: 'internal_error' }));
+      res.end(JSON.stringify({ error: 'internal_error', details: e.message }));
     }
   };
 } else {
