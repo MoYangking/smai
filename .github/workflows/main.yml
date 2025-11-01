@@ -14,7 +14,7 @@ on:
 env:
   REGISTRY: ghcr.io
   # The IMAGE_NAME is derived from the repository name
-  IMAGE_NAME: smithery2api
+  IMAGE_NAME: smithery2-2api
 
 jobs:
   build-and-push-image:
