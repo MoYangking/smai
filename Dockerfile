@@ -1,28 +1,17 @@
-# Enhanced Dockerfile for Node server with modular structure
-# No env-based persistence; uses /app/data (JSON files)
-
+# Build a small Node.js runtime image
 FROM node:20-alpine
+
 WORKDIR /app
 
-# Copy package files
 COPY package.json ./
-COPY package-lock.json* ./
+RUN npm install --only=production
 
-# Copy configuration and public files
-COPY config.json ./
-COPY public ./public
-
-# Copy source code (modular structure)
+COPY config ./config
 COPY src ./src
-COPY server.js ./
+COPY public ./public
+COPY data ./data
 
-# Ensure data dir exists (and can be mounted as volume)
-RUN mkdir -p /app/data
-VOLUME ["/app/data"]
+EXPOSE 3000
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:8787/admin/config', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) }).on('error', () => process.exit(1))"
+CMD ["node", "src/index.js"]
 
-EXPOSE 8787
-CMD ["node", "server.js"]

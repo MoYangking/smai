@@ -3,396 +3,186 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Smithery 管理控制台</title>
+  <title>SMAI 控制台</title>
   <style>
-    :root{
-      /* Neutrals */
-      --g-50:#fafbfc; --g-75:#f9fafb; --g-100:#f8fafc; --g-150:#f3f6f9; --g-200:#e2e8f0; --g-300:#cbd5e1; --g-400:#94a3b8; --g-500:#64748b; --g-600:#475569; --g-700:#334155; --g-900:#0f172a;
-      /* Theme */
-      --primary:#10b981; /* 翡翠绿 */
-      --primary-weak: rgba(16,185,129,.10);
-      --accent:#8b5cf6; /* 紫罗兰 */
-      --teal:#14b8a6; /* 青绿色 */
-      --rose:#f43f5e; /* 错误 */
-      --bg: var(--g-100);
-      --panel:#ffffff;
-      --text:#0f172a;
-      --text-muted:#475569;
-      --border: #e2e8f0;
-      --shadow-1: 0 2px 10px rgba(2,6,23,.06);
-      --shadow-2: 0 8px 24px rgba(2,6,23,.10);
-      --ease: cubic-bezier(0.4,0,0.2,1);
+    :root {
+      --bg: #f8fafc;
+      --bg-subtle: #f9fafb;
+      --card: #ffffff;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: rgba(16,185,129,0.25);      /* emerald 20-30% */
+      --border-strong: rgba(16,185,129,0.45);
+      --primary: #10b981;                   /* emerald */
+      --violet: #8b5cf6;                    /* accent */
+      --coral: #f97316;                     /* accent */
+      --rose: #f43f5e;                      /* err */
+      --ok: #16a34a;
+      --warn: #f59e0b;
+      --radius: 14px;
+      --shadow-1: 0 2px 8px rgba(2, 6, 23, 0.05);
+      --shadow-2: 0 8px 24px rgba(2, 6, 23, 0.08);
+      --shadow-3: 0 16px 40px rgba(2, 6, 23, 0.12);
+      --grid-dot: rgba(2, 6, 23, 0.04);
+      --transition: cubic-bezier(0.4, 0, 0.2, 1);
     }
-    *{ box-sizing: border-box; }
-    html,body{ height:100%; }
-    body{
-      margin:0; color:var(--text); font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+      color: var(--text);
       background: var(--bg);
-      background-image:
-        radial-gradient(800px 400px at 12% -10%, rgba(139,92,246,.12), transparent 58%),
-        radial-gradient(700px 380px at 110% 0%, rgba(16,185,129,.12), transparent 60%),
-        radial-gradient(600px 300px at 30% 120%, rgba(20,184,166,.12), transparent 60%),
-        repeating-linear-gradient(0deg, rgba(51,65,85,.04), rgba(51,65,85,.04) 1px, transparent 1px, transparent 18px),
-        repeating-linear-gradient(90deg, rgba(51,65,85,.04), rgba(51,65,85,.04) 1px, transparent 1px, transparent 18px);
-      background-attachment: fixed;
+      overflow-y: auto;
     }
-    a{ color: var(--teal); text-decoration: none; }
-    a:hover{ text-decoration: underline; }
-    header{ position: sticky; top: 0; z-index: 10; background: rgba(255,255,255,.85); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); border-bottom: 1px solid var(--border); box-shadow: var(--shadow-1); animation: fadeInDown .7s var(--ease) both; }
-    .container{ max-width: 1200px; margin: 0 auto; padding: 12px 16px; }
-    .topbar{ display:flex; align-items:center; gap:16px; }
-    .brand{ display:flex; align-items:center; gap:10px; }
-    .logo{ width:36px; height:36px; border-radius:12px; display:grid; place-items:center; background: rgba(16,185,129,.10); border:1px solid rgba(16,185,129,.25); box-shadow: var(--shadow-1); }
-    .brand h1{ font-size:18px; margin:0; letter-spacing:.2px; }
-    .brand small{ display:block; color:var(--text-muted); font-size:12px; }
-    nav{ margin-left:auto; display:flex; gap:12px; flex-wrap:wrap; }
-    .nav-link{ padding:8px 10px; border-radius:999px; border:1px solid var(--border); background: #fff; color:var(--text-muted); transition: transform .15s var(--ease), box-shadow .25s var(--ease), border-color .25s var(--ease), background .25s var(--ease); }
-    .nav-link:hover{ transform: translateY(-2px); border-color: rgba(16,185,129,.35); box-shadow: var(--shadow-2); color: var(--text); }
-    main{ max-width: 1200px; margin: 0 auto; padding: 18px 16px 28px; display:grid; grid-template-columns: 1fr; gap:16px; }
-    @media (min-width: 1024px){ main{ grid-template-columns: 2fr 1fr; } }
-    .stack{ display:grid; gap:16px; }
-    .card{ position:relative; background: var(--panel); border:1px solid var(--border); border-radius:16px; padding:16px; box-shadow: var(--shadow-1); transition: transform .2s var(--ease), box-shadow .2s var(--ease), border-color .2s var(--ease), background .2s var(--ease); animation: fadeInUp .7s var(--ease) both; }
-    .card:hover{ transform: translateY(-3px); box-shadow: var(--shadow-2); border-color: rgba(16,185,129,.30); background: linear-gradient(0deg, rgba(16,185,129,.02), rgba(16,185,129,.02)), var(--panel); }
-    .card-head{ display:flex; align-items:center; gap:12px; margin-bottom:8px; }
-    .card-icon{ width:36px; height:36px; border-radius:10px; display:grid; place-items:center; background: rgba(16,185,129,.10); border:1px solid rgba(16,185,129,.25); }
-    .card h2{ margin:0; font-size:16px; }
-    .desc{ color: var(--text-muted); font-size:13px; margin: 8px 0 10px; }
-    label{ color: var(--text-muted); font-size:12px; display:block; margin-bottom:6px; }
-    input[type=text], input[type=number], select{ width:100%; padding:10px 12px; border-radius:12px; border:1px solid var(--border); background:#fff; color:var(--text); transition: border-color .2s var(--ease), box-shadow .2s var(--ease), background .2s var(--ease); }
-    input[type=text]::placeholder, input[type=number]::placeholder{ color: var(--g-400); }
-    input[type=text]:focus, input[type=number]:focus, select:focus{ border-color: rgba(16,185,129,.45); box-shadow: 0 0 0 3px rgba(16,185,129,.15); outline: none; }
-    input[type=checkbox]{ width:18px; height:18px; accent-color: var(--primary); }
-    .row{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
-    .muted{ color: var(--text-muted); font-size:12px; }
-    .status{ font-size:12px; margin-left:6px; color: var(--primary); }
-    .status.err{ color: var(--rose); }
-    .btn{ position:relative; padding:10px 14px; border-radius:12px; border:1px solid var(--border); background:#fff; color:var(--text); cursor:pointer; transition: transform .08s var(--ease), box-shadow .2s var(--ease), background .2s var(--ease), border-color .2s var(--ease); }
-    .btn:hover{ transform: translateY(-2px); box-shadow: var(--shadow-2); border-color: rgba(16,185,129,.25); }
-    .btn:active{ transform: translateY(0); }
-    .btn.primary{ background: var(--primary); border-color: var(--primary); color: #fff; box-shadow: 0 6px 18px rgba(16,185,129,.25); }
-    .btn.ghost{ background: #fff; }
-    .btn.danger{ background: var(--rose); border-color: var(--rose); color:#fff; }
-    .list{ max-height: 280px; overflow:auto; border:1px dashed var(--border); border-radius:12px; padding:8px; background: #fff; }
-    .pill{ display:inline-block; padding:6px 10px; border-radius:999px; border:1px solid var(--border); margin:6px 6px 0 0; font-size:12px; color:var(--text-muted); background: linear-gradient(0deg, var(--g-150), #fff); }
-    .cookie-item{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 12px; border:1px solid var(--border); border-radius:10px; background: var(--g-50); }
-    .cookie-item.current{ border-color: rgba(16,185,129,.45); background: rgba(16,185,129,.08); }
-    .cookie-index{ display:inline-grid; place-items:center; width:22px; height:22px; border-radius:50%; background: var(--accent); color:#fff; font-size:12px; }
-    .cookie-index.current{ background: var(--primary); }
-    .cookie-text{ font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size:12px; color: #334155; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-    .logs{ font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size:12px; line-height:1.45; }
-    .log-line{ display:block; padding:4px 6px; border-bottom:1px dashed var(--border); white-space: pre-wrap; }
-    .level-chip{ display:inline-block; min-width:58px; text-align:center; border-radius:999px; padding:0 6px; border:1px solid var(--border); margin:0 6px; }
-    .level-debug{ color:#2563eb; border-color:#bfdbfe; background:#eff6ff; }
-    .level-info{ color:#065f46; border-color:#bbf7d0; background:#ecfdf5; }
-    .level-error{ color:#9f1239; border-color:#fecdd3; background:#fff1f2; }
-    .toasts{ position: fixed; right: 16px; bottom: 16px; z-index: 50; display:flex; flex-direction:column; gap:8px; }
-    .toast{ min-width: 200px; max-width: 360px; padding:10px 12px; border-radius:12px; border:1px solid rgba(16,185,129,.35); background: linear-gradient(0deg, rgba(16,185,129,.10), #fff); color:#065f46; font-size:12px; box-shadow: var(--shadow-2); animation: toast-in .2s var(--ease), toast-out .25s var(--ease) 2.6s forwards; }
-    .toast.err{ border-color: rgba(244,63,94,.35); background: linear-gradient(0deg, rgba(244,63,94,.10), #fff); color:#9f1239; }
-    @keyframes toast-in{ from{ transform: translateY(8px); opacity:0; } to{ transform: translateY(0); opacity:1; } }
-    @keyframes toast-out{ to{ transform: translateY(6px); opacity:0; } }
-    @keyframes fadeInDown{ from{ transform: translateY(-8px); opacity:0; } to{ transform: translateY(0); opacity:1; } }
-    @keyframes fadeInUp{ from{ transform: translateY(8px); opacity:0; } to{ transform: translateY(0); opacity:1; } }
-    @media (max-width: 767px){ .cookie-text{ max-width: 140px; } }
+
+    /* soft background decorations */
+    .bg-decor {
+      position: fixed; inset: 0; pointer-events: none; z-index: 0;
+      background-image:
+        radial-gradient(1200px 600px at 10% -10%, rgba(139,92,246,0.12), transparent 60%),
+        radial-gradient(900px 500px at 90% 0%, rgba(16,185,129,0.12), transparent 55%),
+        radial-gradient(900px 600px at 50% 100%, rgba(249,115,22,0.10), transparent 60%),
+        linear-gradient(transparent, transparent),
+        radial-gradient(circle at 1px 1px, var(--grid-dot) 1px, transparent 0);
+      background-size: auto, auto, auto, auto, 22px 22px;
+      filter: blur(0.00001px); /* keep subpixel grid subtle */
+      opacity: 1;
+    }
+
+    header {
+      position: relative; z-index: 1;
+      background: linear-gradient(to bottom, #ffffff, transparent);
+      border-bottom: 1px solid rgba(15,23,42,0.06);
+    }
+    .header-wrap {
+      max-width: 1200px; margin: 0 auto; padding: 20px 16px;
+      display: flex; align-items: center; justify-content: space-between;
+      animation: fadeInDown 0.7s var(--transition) both;
+    }
+    .brand { display:flex; align-items:center; gap:12px; }
+    .brand .logo {
+      width: 36px; height: 36px; border-radius: 9px;
+      background: rgba(16,185,129,0.12);
+      border: 1px solid var(--border);
+      display:flex; align-items:center; justify-content:center;
+    }
+    .brand .logo svg { stroke: var(--primary); }
+    .brand .title { font-weight: 700; font-size: 18px; letter-spacing: .2px; }
+    .brand .sub { color: var(--muted); font-size: 12px; }
+    nav { display:flex; gap: 16px; }
+    nav a { color: var(--muted); text-decoration: none; font-size: 14px; padding: 8px 10px; border-radius: 8px; transition: color .25s var(--transition), background-color .25s var(--transition); }
+    nav a:hover, nav a:focus { color: var(--text); background: rgba(15,23,42,0.04); outline:none; }
+
+    main { position: relative; z-index: 1; }
+    .layout { max-width: 1200px; margin: 0 auto; padding: 20px 16px 56px; display: grid; gap: 20px; grid-template-columns: 1fr; }
+    @media (min-width: 1024px) { .layout { grid-template-columns: 2fr 1fr; } }
+    @media (min-width: 1440px) { .layout { grid-template-columns: 3fr 1.2fr; } }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-1);
+      transition: transform .25s var(--transition), box-shadow .25s var(--transition), border-color .25s var(--transition), background-color .25s var(--transition);
+      padding: 18px;
+      animation: fadeInUp 0.75s var(--transition) both;
+    }
+    .card:hover { transform: translateY(-3px); box-shadow: var(--shadow-2); border-color: var(--border-strong); background-color: #ffffff; }
+    .card .head { display:flex; gap:12px; align-items:center; margin-bottom: 10px; }
+    .icon {
+      width: 40px; height: 40px; border-radius: 10px;
+      background: rgba(16,185,129,0.12); display:flex; align-items:center; justify-content:center;
+      border: 1px solid var(--border);
+    }
+    .icon svg { width: 24px; height:24px; stroke: var(--primary); stroke-width: 2; }
+    .head .title { font-weight: 600; font-size: 16px; }
+    .head .desc { color: var(--muted); font-size: 13px; line-height: 1.6; margin-top: 4px; }
+
+    .grid { display:grid; gap:14px; grid-template-columns: 1fr; }
+    @media (min-width: 768px) { .grid.two { grid-template-columns: 1fr 1fr; } }
+
+    .field { display:flex; flex-direction: column; gap:6px; }
+    label { color: var(--muted); font-size: 12px; }
+    input[type=text], textarea {
+      width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid rgba(2,6,23,0.12);
+      background: #fff; color: var(--text); outline: none; transition: border-color .2s var(--transition), box-shadow .2s var(--transition);
+    }
+    textarea { min-height: 120px; resize: vertical; }
+    input[type=checkbox] { width: 18px; height: 18px; }
+    input:focus, textarea:focus { border-color: rgba(16,185,129,0.5); box-shadow: 0 0 0 4px rgba(16,185,129,0.15); }
+
+    .actions { display:flex; gap:10px; align-items:center; flex-wrap: wrap; }
+    button { padding: 10px 14px; border: 1px solid rgba(2,6,23,0.12); border-radius: 10px; background: #fff; color: var(--text); cursor: pointer; transition: transform .2s var(--transition), background-color .2s var(--transition), border-color .2s var(--transition), color .2s var(--transition); }
+    button.primary { background: #10b981; color: #fff; border-color: #10b981; }
+    button.secondary { background: #fff; color: var(--text); }
+    button.ghost { background: #fff; }
+    button:hover { transform: translateY(-2px); box-shadow: var(--shadow-2); }
+    button:active { transform: scale(0.97); }
+    button:focus { outline: none; box-shadow: 0 0 0 4px rgba(16,185,129,0.15); }
+
+    .status { font-size: 13px; }
+    .ok { color: var(--ok); }
+    .err { color: var(--rose); }
+
+    .stats { display:flex; gap: 10px; flex-wrap: wrap; }
+    .stat { min-width: 140px; padding: 10px 12px; background: var(--bg-subtle); border: 1px solid rgba(2,6,23,0.06); border-radius: 10px; }
+    .stat .k { font-size: 12px; color: var(--muted); }
+    .stat .v { font-size: 18px; font-weight: 700; }
+
+    .list { max-height: 260px; overflow: auto; border: 1px dashed rgba(2,6,23,0.18); border-radius: 10px; padding: 8px; background: #fff; }
+    .pill { display: inline-flex; align-items:center; gap:6px; padding: 4px 8px; border-radius: 999px; border: 1px solid rgba(2,6,23,0.18); margin: 4px 6px 0 0; font-size: 12px; color: var(--muted); background: #fff; }
+    .pill .dot { width:6px; height:6px; border-radius:50%; background: var(--primary); opacity:.6; }
+
+    aside .card { animation: fadeIn .7s var(--transition) .5s both; }
+    .aside-links { display:flex; flex-direction: column; gap:6px; }
+    .aside-links a { color: var(--muted); text-decoration: none; font-size: 14px; padding: 6px 8px; border-radius: 8px; transition: color .2s var(--transition), background-color .2s var(--transition); }
+    .aside-links a:hover, .aside-links a:focus { color: var(--text); background: rgba(15,23,42,0.04); outline:none; }
+
+    /* animations */
+    @keyframes fadeInDown { from { opacity:0; transform: translateY(-8px); } to { opacity:1; transform:none; } }
+    @keyframes fadeInUp { from { opacity:0; transform: translateY(8px); } to { opacity:1; transform:none; } }
+    @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
   </style>
-</head>
-<body>
-  <header>
-    <div class="container topbar">
-      <div class="brand">
-        <div class="logo" aria-label="品牌标识">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <circle cx="12" cy="12" r="9" stroke="var(--primary)" stroke-width="2"/>
-            <path d="M8 12h8M12 8v8" stroke="var(--primary)" stroke-width="2" stroke-linecap="round"/>
-          </svg>
-        </div>
-        <div>
-          <h1>Smithery 管理控制台</h1>
-          <small>专业而不呆板，简洁而不单调</small>
-        </div>
-      </div>
-      <nav aria-label="快速导航">
-        <a class="nav-link" href="#sec-cookies">当前 Cookie</a>
-        <a class="nav-link" href="#sec-pool">Cookie 池</a>
-        <a class="nav-link" href="#sec-models">模型</a>
-        <a class="nav-link" href="#sec-settings">设置</a>
-        <a class="nav-link" href="#sec-logs">日志</a>
-      </nav>
-    </div>
-  </header>
-
-  <main>
-    <div class="stack">
-      <section id="sec-cookies" class="card" style="animation-delay:.05s">
-        <div class="card-head">
-          <div class="card-icon" aria-hidden="true">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-              <path d="M4 7h16v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7z" stroke="var(--primary)" stroke-width="2"/>
-              <path d="M7 7V6a5 5 0 0 1 10 0v1" stroke="var(--primary)" stroke-width="2"/>
-            </svg>
-          </div>
-          <h2>当前 Cookie 管理</h2>
-        </div>
-        <p class="desc">在此维护后端代理请求所需的 Cookie。保存后会写入本地配置文件，后端转发请求时会自动携带。建议仅粘贴 smithery.ai 相关的键值，以避免无关信息泄露。</p>
-        <label for="cookies">当前使用的 Cookie（示例：k1=v1; k2=v2）</label>
-        <input id="cookies" type="text" placeholder="在此粘贴 smithery.ai 所需 Cookie" />
-        <div class="row" style="margin-top:8px;">
-          <button id="btn-save-cookies" class="btn primary" onclick="onSaveCookies()">保存当前 Cookie</button>
-          <span id="cookies-status" class="status"></span>
-        </div>
-      </section>
-
-      <section id="sec-pool" class="card" style="animation-delay:.1s">
-        <div class="card-head">
-          <div class="card-icon" aria-hidden="true">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-              <circle cx="12" cy="12" r="10" stroke="var(--primary)" stroke-width="2"/>
-              <path d="M19 11h-6V5h-2v6H5v2h6v6h2v-6h6z" stroke="var(--primary)" stroke-width="2"/>
-            </svg>
-          </div>
-          <h2>Cookie 池管理</h2>
-        </div>
-        <p class="desc">支持批量维护多个 Cookie，并提供轮换与随机选择能力。在请求失败或触发风控时可自动切换，有助于提升代理的稳定性。可随时刷新状态或清空池内容。</p>
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-bottom: 10px;">
-          <div>
-            <label for="new-cookie">添加新 Cookie 到池</label>
-            <input id="new-cookie" type="text" placeholder="输入要添加的 Cookie" />
-            <div class="row" style="margin-top:8px;">
-              <button class="btn primary" onclick="onAddCookieToPool()">添加到池</button>
-              <span id="add-cookie-status" class="status"></span>
-            </div>
-          </div>
-          <div>
-            <label>快速操作</label>
-            <div class="row" style="margin-top:8px; gap:8px;">
-              <button class="btn" onclick="onRotateCookie()">轮换 Cookie</button>
-              <button class="btn" onclick="onRandomCookie()">随机选择</button>
-              <button class="btn danger" onclick="onClearCookiePool()">清空池</button>
-              <span id="pool-status" class="status"></span>
-            </div>
-          </div>
-        </div>
-        <div class="row" style="margin-bottom:8px;">
-          <div class="muted">池中 Cookie 数量：<b id="pool-count">0</b></div>
-          <div class="muted">当前使用：<b id="current-index">—</b></div>
-          <button class="btn ghost" onclick="onRefreshCookiePool()">刷新状态</button>
-        </div>
-        <label>Cookie 池列表</label>
-        <div id="cookie-pool-list" class="list" style="margin-top:8px; max-height:220px;">
-          <div class="muted" style="text-align:center; padding: 20px;">暂无 Cookie，请添加</div>
-        </div>
-        <p class="muted" style="margin-top:8px;">当请求失败时将自动切换到下一个可用 Cookie；你也可以手动轮换或随机选择以规避风控。</p>
-      </section>
-
-      <section id="sec-models" class="card" style="animation-delay:.15s">
-        <div class="card-head">
-          <div class="card-icon" aria-hidden="true">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-              <path d="M4 7h16M4 12h16M4 17h16" stroke="var(--primary)" stroke-width="2" />
-            </svg>
-          </div>
-          <h2>模型缓存</h2>
-        </div>
-        <p class="desc">展示当前本地已缓存的模型列表，可在线刷新并写入 JSON 文件，以便 /v1/models 快速响应。必要时可清空缓存重新获取。</p>
-        <div class="row"><div class="muted">数量：<b id="models-count">0</b></div></div>
-        <div id="models-list" class="list" style="margin-top:8px;"></div>
-        <div class="row" style="margin-top:8px;">
-          <button id="btn-refresh" class="btn primary" onclick="onRefresh()">在线刷新模型</button>
-          <button class="btn ghost" onclick="onClear()">清空缓存</button>
-          <span id="models-status" class="status"></span>
-        </div>
-      </section>
-
-      <section class="card" style="animation-delay:.2s">
-        <div class="card-head">
-          <div class="card-icon" aria-hidden="true">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-              <path d="M12 5v14M5 12h14" stroke="var(--primary)" stroke-width="2" stroke-linecap="round"/>
-            </svg>
-          </div>
-          <h2>手动添加模型</h2>
-        </div>
-        <p class="desc">当某些模型在线抓取尚未收录时，可通过此处手动添加到本地缓存（仅影响 /v1/models 返回，不校验实际可用性）。可选启用推理以生成 -minimal/-low/-medium/-high 派生项。</p>
-        <label for="model-id">Model ID</label>
-        <input id="model-id" type="text" placeholder="例如：gpt-5-mini" />
-        <div class="row" style="margin-top:8px;">
-          <div style="flex:1; min-width: 180px;">
-            <label for="model-owned">Owned By</label>
-            <input id="model-owned" type="text" placeholder="例如：openai" />
-          </div>
-          <div class="row" style="gap:6px; align-items:center;">
-            <input id="model-reason" type="checkbox" />
-            <label for="model-reason">支持推理（生成 -minimal/-low/-medium/-high 衍生）</label>
-          </div>
-        </div>
-        <div class="row" style="margin-top:8px;">
-          <button class="btn primary" onclick="onAddModel()">添加模型</button>
-        </div>
-      </section>
-
-      <section id="sec-settings" class="card" style="animation-delay:.25s">
-        <div class="card-head">
-          <div class="card-icon" aria-hidden="true">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-              <path d="M12 2v3M12 19v3M4.93 4.93l2.12 2.12M16.95 16.95l2.12 2.12M2 12h3M19 12h3M4.93 19.07l2.12-2.12M16.95 7.05l2.12-2.12" stroke="var(--primary)" stroke-width="2" stroke-linecap="round"/>
-            </svg>
-          </div>
-          <h2>设置</h2>
-        </div>
-        <p class="desc">更改调试与性能参数。多数设置即时生效，极少数需重启进程。请根据实际负载与网络状况调整，以获得最佳性能与稳定性。</p>
-        <div class="row">
-          <label style="min-width:90px;">Debug 模式</label>
-          <input id="cfg-debug" type="checkbox" />
-          <span class="muted">启用后写入调试日志</span>
-        </div>
-        <div class="row" style="margin-top:8px;">
-          <div style="flex:1; min-width: 160px;">
-            <label>Heartbeat 间隔 (ms)</label>
-            <input id="cfg-heartbeat" type="number" min="500" step="100" placeholder="15000" />
-          </div>
-          <div style="flex:1; min-width: 160px;">
-            <label>Flush Interval (ms)</label>
-            <input id="cfg-flush" type="number" min="10" max="200" step="10" placeholder="40" />
-          </div>
-          <div style="flex:1; min-width: 160px;">
-            <label>Auto Resume Max</label>
-            <input id="cfg-resume" type="number" min="1" max="5" step="1" placeholder="1" />
-          </div>
-        </div>
-        <div class="row" style="margin-top:8px;">
-          <div style="flex:1; min-width: 160px;">
-            <label>Port（只读）</label>
-            <input id="cfg-port" type="text" disabled />
-          </div>
-          <div style="flex:2; min-width: 220px;">
-            <label>Data Dir（只读）</label>
-            <input id="cfg-datadir" type="text" disabled />
-          </div>
-        </div>
-        <div class="row" style="margin-top:8px;">
-          <button id="btn-save-config" class="btn primary" onclick="onSaveConfig()">保存设置</button>
-          <span id="config-status" class="status"></span>
-        </div>
-      </section>
-
-      <section id="sec-logs" class="card" style="animation-delay:.3s">
-        <div class="card-head">
-          <div class="card-icon" aria-hidden="true">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-              <path d="M4 6h16M8 10h12M8 14h12M4 18h16" stroke="var(--primary)" stroke-width="2" stroke-linecap="round"/>
-            </svg>
-          </div>
-          <h2>运行日志</h2>
-        </div>
-        <p class="desc">实时查看代理运行输出，支持自动刷新、级别筛选与复制。用于快速定位错误或验证配置是否生效，建议在调试期间开启自动刷新。</p>
-        <div class="row">
-          <label><input id="logs-auto" type="checkbox" /> 自动刷新</label>
-          <label>最大条数</label>
-          <input id="logs-limit" type="number" value="200" min="50" max="2000" step="50" style="width:120px" />
-          <label>级别</label>
-          <select id="logs-level">
-            <option value="all">全部</option>
-            <option value="debug">debug</option>
-            <option value="info">info</option>
-            <option value="error">error</option>
-          </select>
-          <button class="btn primary" id="btn-logs-refresh" onclick="refreshLogs(true)">刷新</button>
-          <button class="btn ghost" id="btn-logs-clear" onclick="onClearLogs()">清空</button>
-          <button class="btn ghost" id="btn-logs-copy" onclick="onCopyLogs()">复制</button>
-          <span id="logs-status" class="status"></span>
-        </div>
-        <div id="logs-list" class="list logs" style="margin-top:8px;"></div>
-      </section>
-    </div>
-
-    <aside class="stack" aria-label="辅助信息" style="animation-delay:.05s">
-      <section class="card">
-        <div class="card-head">
-          <div class="card-icon" aria-hidden="true">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 3l7 4v10l-7 4-7-4V7l7-4z" stroke="var(--primary)" stroke-width="2"/></svg>
-          </div>
-          <h2>快速导航</h2>
-        </div>
-        <p class="desc">常用入口，便于在不同功能间快速切换。</p>
-        <div class="row" style="gap:8px; flex-wrap:wrap;">
-          <a class="btn" href="#sec-cookies">当前 Cookie</a>
-          <a class="btn" href="#sec-pool">Cookie 池</a>
-          <a class="btn" href="#sec-models">模型</a>
-          <a class="btn" href="#sec-settings">设置</a>
-          <a class="btn" href="#sec-logs">运行日志</a>
-        </div>
-      </section>
-      <section class="card">
-        <div class="card-head">
-          <div class="card-icon" aria-hidden="true">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="var(--primary)" stroke-width="2"/></svg>
-          </div>
-          <h2>使用提示</h2>
-        </div>
-        <p class="desc">为避免风控，建议在 Cookie 池中维护多份有效 Cookie；发生失败时可手动轮换或随机选择，或启用自动切换策略。</p>
-        <ul style="margin:0; padding-left:18px; color:var(--text-muted); font-size:13px;">
-          <li>重要操作均有过渡动画与明确反馈。</li>
-          <li>所有表单元素提供可访问的焦点状态。</li>
-          <li>颜色对比度符合可读性要求。</li>
-        </ul>
-      </section>
-    </aside>
-  </main>
-  <div class="container" style="text-align:center; color:var(--text-muted); font-size:12px; margin-bottom:18px;">© Smithery Node Proxy</div>
-  <div id="toasts" class="toasts" aria-live="polite" aria-atomic="true"></div>
   <script>
     async function api(path, opts={}){
-      const r = await fetch(path, { headers:{'content-type':'application/json'}, ...opts });
-      const ct = r.headers.get('content-type')||'';
-      if (!ct.includes('application/json')) return {};
+      const r = await fetch(path, {headers:{'content-type':'application/json'}, ...opts});
       return await r.json();
     }
-    function showToast(msg, isErr=false){
-      const wrap = document.getElementById('toasts');
-      if(!wrap) return;
-      const el = document.createElement('div');
-      el.className = 'toast' + (isErr ? ' err' : '');
-      el.textContent = msg;
-      wrap.appendChild(el);
-      setTimeout(()=>{ try{ wrap.removeChild(el); }catch{} }, 3000);
-    }
     function setStatus(id, msg, isErr=false){
-      const el = document.getElementById(id);
-      if (el){
-        el.textContent = msg;
-        el.className = 'status ' + (isErr? 'err':'');
-        setTimeout(()=>{ el.textContent=''; }, 2800);
-      }
-      if (msg) showToast(msg, isErr);
+      const el=document.getElementById(id); el.textContent=msg; el.className='status '+(isErr?'err':'ok');
+      setTimeout(()=>{el.textContent='';}, 2800);
+    }
+    function setStat(id, val){
+      const el=document.getElementById(id); if (el) el.textContent = String(val);
     }
     async function load(){
       try{
         const ms = await api('/v1/models');
         const list = (ms && ms.data) ? ms.data : [];
-        document.getElementById('models-count').textContent = String(list.length);
+        setStat('models-count', list.length);
         const ul = document.getElementById('models-list'); ul.innerHTML='';
-        list.slice(0, 200).forEach(x=>{ const s = document.createElement('span'); s.className='pill'; s.textContent=x.id; ul.appendChild(s); });
-      }catch(e){ setStatus('models-status','获取模型失败', true); }
+        list.slice(0, 120).forEach(x=>{ const s=document.createElement('span'); s.className='pill'; s.innerHTML='<span class="dot"></span>'+x.id; ul.appendChild(s); });
+        setStat('last-refresh', new Date().toLocaleString());
+      }catch(e){ setStatus('models-status', '获取模型失败', true); }
       try{
         const ck = await api('/admin/cookies');
-        document.getElementById('cookies').value = (ck && ck.cookies) ? ck.cookies : '';
-      }catch(e){ setStatus('cookies-status','读取 Cookies 失败', true); }
-      await refreshCookiePool();
+        const arr = Array.isArray(ck.cookies) ? ck.cookies : [];
+        document.getElementById('cookies').value = arr.join('\n');
+        setStat('cookies-count', arr.length);
+      }catch(e){ setStatus('cookies-status', '读取 Cookies 失败', true); }
     }
     async function onSaveCookies(){
-      const btn = document.getElementById('btn-save-cookies');
-      btn && (btn.disabled = true);
       const cookies = document.getElementById('cookies').value.trim();
-      const r = await api('/admin/cookies', { method:'POST', body: JSON.stringify({ cookies }) });
-      setStatus('cookies-status', r && r.ok ? '已保存' : '保存失败', !(r && r.ok));
-      btn && (btn.disabled = false);
+      const r = await api('/admin/cookies',{method:'POST',body:JSON.stringify({cookies})});
+      setStatus('cookies-status', r.ok?('已保存，多条：'+r.count):'保存失败', !r.ok);
+      if (r.ok) setStat('cookies-count', r.count||0);
     }
     async function onRefresh(){
-      const btn = document.getElementById('btn-refresh');
-      if(btn){ btn.disabled = true; btn.dataset.txt = btn.textContent; btn.textContent = '刷新中…'; }
-      setStatus('models-status','刷新中…');
-      const r = await api('/v1/models/refresh', { method:'POST' });
-      setStatus('models-status', r && r.data ? '刷新成功' : '刷新失败', !(r && r.data));
-      if(btn){ btn.disabled = false; btn.textContent = btn.dataset.txt || '在线刷新模型'; }
+      setStatus('models-status','刷新中...');
+      const r = await api('/v1/models/refresh',{method:'POST'});
+      setStatus('models-status', r && r.data ? '刷新成功' : '刷新失败', !(r&&r.data));
       await load();
     }
     async function onAddModel(){
@@ -400,65 +190,175 @@
       const owned_by = document.getElementById('model-owned').value.trim() || 'custom';
       const supportsReasoning = document.getElementById('model-reason').checked;
       if(!id){ setStatus('models-status','请输入 Model ID', true); return; }
-      const r = await api('/admin/models/add', { method:'POST', body: JSON.stringify({ id, owned_by, supportsReasoning }) });
-      setStatus('models-status', r && r.ok ? ('已添加，合计 '+ r.count) : '添加失败', !(r && r.ok));
-      document.getElementById('model-id').value='';
-      await load();
+      const r = await api('/admin/models/add',{method:'POST',body:JSON.stringify({id,owned_by,supportsReasoning})});
+      setStatus('models-status', r.ok?('已添加，合计 '+r.count):'添加失败', !r.ok);
+      if (r.ok) { document.getElementById('model-id').value=''; await load(); }
     }
     async function onClear(){
-      const ok = confirm('确认清空本地模型缓存？'); if(!ok) return;
-      const r = await api('/admin/models/clear', { method:'POST' });
-      setStatus('models-status', r && r.ok ? '已清空缓存' : '操作失败', !(r && r.ok));
+      const r = await api('/admin/models/clear',{method:'POST'});
+      setStatus('models-status', r.ok?'已清空缓存':'操作失败', !r.ok);
       await load();
     }
-    async function refreshCookiePool() {
-      try {
-        const poolData = await api('/admin/cookie-pool');
-        if (!poolData) {
-          document.getElementById('pool-count').textContent = '0';
-          document.getElementById('current-index').textContent = '—';
-          document.getElementById('cookie-pool-list').innerHTML = '<div class="muted" style="text-align:center;padding:20px;">暂无 Cookie，请添加</div>';
-          return;
-        }
-        document.getElementById('pool-count').textContent = String(poolData.total || 0);
-        if (poolData.currentIndex >= 0 && poolData.current) document.getElementById('current-index').textContent = `第 ${poolData.currentIndex + 1} 个`; else document.getElementById('current-index').textContent = '—';
-        const listEl = document.getElementById('cookie-pool-list'); listEl.innerHTML = '';
-        if (!poolData.cookies || poolData.cookies.length === 0) { listEl.innerHTML = '<div class="muted" style="text-align:center;padding:20px;">暂无 Cookie，请添加</div>'; return; }
-        poolData.cookies.forEach((cookie, index) => {
-          const itemEl = document.createElement('div'); itemEl.className = 'cookie-item' + (cookie.isCurrent ? ' current' : '');
-          const infoEl = document.createElement('div'); infoEl.style.flex = '1'; infoEl.style.minWidth = '120px';
-          const indexEl = document.createElement('span'); indexEl.className = 'cookie-index' + (cookie.isCurrent ? ' current' : ''); indexEl.textContent = index + 1;
-          const textEl = document.createElement('span'); textEl.className = 'cookie-text'; textEl.textContent = cookie.preview || 'Cookie 内容过长'; if (cookie.preview && cookie.preview.endsWith('...')) textEl.title = '完整内容：' + cookie.preview;
-          infoEl.appendChild(indexEl); infoEl.appendChild(document.createTextNode(' ')); infoEl.appendChild(textEl);
-          const removeBtn = document.createElement('button'); removeBtn.textContent = '移除'; removeBtn.className = 'btn'; removeBtn.onclick = () => onRemoveCookieFromPool(cookie.preview);
-          itemEl.appendChild(infoEl); itemEl.appendChild(removeBtn); listEl.appendChild(itemEl);
-        });
-      } catch (e) { setStatus('pool-status', '获取 Cookie 池失败', true); console.error('Cookie pool error:', e); }
-    }
-    async function onRefreshCookiePool(){ await refreshCookiePool(); setStatus('pool-status','已刷新',false); }
-    async function onAddCookieToPool() {
-      const cookieInput = document.getElementById('new-cookie'); const cookie = cookieInput.value.trim(); if (!cookie) { setStatus('add-cookie-status', '请输入 Cookie', true); return; }
-      try { const result = await api('/admin/cookie-pool/add', { method: 'POST', body: JSON.stringify({ cookies: cookie }) }); if (result && result.ok) { setStatus('add-cookie-status', `已添加，池中共 ${result.total} 个 Cookie`, false); cookieInput.value = ''; await refreshCookiePool(); } else { setStatus('add-cookie-status', '添加失败', true); } } catch (e) { setStatus('add-cookie-status', '添加失败', true); console.error('Add cookie error:', e); }
-    }
-    async function onRemoveCookieFromPool(cookiePreview) {
-      if (!confirm(`确定要移除这个 Cookie 吗？\n${cookiePreview}`)) return;
-      try { const result = await api(`/admin/cookie-pool/remove?cookie=${encodeURIComponent(cookiePreview)}`, { method: 'DELETE' }); if (result && result.ok) { setStatus('pool-status', `已移除，剩余 ${result.total} 个 Cookie`, false); await refreshCookiePool(); } else { setStatus('pool-status', '移除失败', true); } } catch (e) { setStatus('pool-status', '移除失败', true); console.error('Remove cookie error:', e); }
-    }
-    async function onRotateCookie() { try { const result = await api('/admin/cookie-pool/rotate', { method: 'POST' }); if (result && result.ok) { setStatus('pool-status', `已轮换到第 ${result.index + 1} 个 Cookie`, false); await refreshCookiePool(); await load(); } else { setStatus('pool-status', (result && result.message) || '轮换失败', true); } } catch (e) { setStatus('pool-status', '轮换失败', true); console.error('Rotate cookie error:', e); } }
-    async function onRandomCookie() { try { const result = await api('/admin/cookie-pool/random', { method: 'POST' }); if (result && result.ok) { setStatus('pool-status', `已随机选择第 ${result.index + 1} 个 Cookie`, false); await refreshCookiePool(); await load(); } else { setStatus('pool-status', (result && result.message) || '随机选择失败', true); } } catch (e) { setStatus('pool-status', '随机选择失败', true); console.error('Random cookie error:', e); } }
-    async function onClearCookiePool() { if (!confirm('确定要清空整个 Cookie 池吗？这将删除所有已添加的 Cookie。')) return; try { const result = await api('/admin/cookie-pool/clear', { method: 'DELETE' }); if (result && result.ok) { setStatus('pool-status', 'Cookie 池已清空', false); await refreshCookiePool(); } else { setStatus('pool-status', '清空失败', true); } } catch (e) { setStatus('pool-status', '清空失败', true); console.error('Clear cookie pool error:', e); } }
-    async function loadConfigUI(){ try{ const cfg = await api('/admin/config'); if(!cfg) return; const s = (id)=>document.getElementById(id); s('cfg-debug').checked = !!cfg.debug; s('cfg-heartbeat').value = Number(cfg.heartbeatMs||15000); s('cfg-flush').value = Number(cfg.flushIntervalMs||40); s('cfg-resume').value = Number(cfg.autoResumeMax||1); s('cfg-port').value = String(cfg.port||8787); s('cfg-datadir').value = String(cfg.dataDir||''); }catch(e){ setStatus('config-status','读取设置失败', true); } }
-    async function onSaveConfig(){ const body = { debug: document.getElementById('cfg-debug').checked, heartbeatMs: Number(document.getElementById('cfg-heartbeat').value), flushIntervalMs: Number(document.getElementById('cfg-flush').value), autoResumeMax: Number(document.getElementById('cfg-resume').value) }; const r = await api('/admin/config', { method:'POST', body: JSON.stringify(body) }); setStatus('config-status', r && r.ok ? '已保存' : '保存失败', !(r && r.ok)); await loadConfigUI(); }
-    let LOGS_LAST_TS = 0; let LOGS_TIMER = null;
-    function formatTime(ts){ try{ const d = new Date(Number(ts)||Date.now()); const pad = (n)=>String(n).padStart(2,'0'); return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`; }catch{ return String(ts); } }
-    function escapeHtml(s){ return String(s).replace(/[&<>\"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[c])); }
-    function renderLogs(items, append=true){ const box = document.getElementById('logs-list'); const levelFilter = (document.getElementById('logs-level').value)||'all'; if(!append) box.innerHTML = ''; for(const it of items||[]){ if(levelFilter!=='all' && String(it.level)!==levelFilter) continue; const line = document.createElement('div'); line.className = 'log-line'; const chip = document.createElement('span'); chip.className = 'level-chip ' + (it.level==='error' ? 'level-error' : it.level==='debug' ? 'level-debug' : 'level-info'); chip.textContent = it.level || ''; line.appendChild(document.createTextNode('['+formatTime(it.ts)+'] ')); line.appendChild(chip); line.appendChild(document.createTextNode(' ' + (it.message||''))); if(it.meta){ line.appendChild(document.createTextNode('  ')); const meta = document.createElement('span'); meta.className='muted'; meta.textContent='meta:'; line.appendChild(meta); line.appendChild(document.createTextNode(' '+JSON.stringify(it.meta))); } box.appendChild(line); if(!LOGS_LAST_TS || it.ts>LOGS_LAST_TS) LOGS_LAST_TS = it.ts; } const max = Number(document.getElementById('logs-limit').value)||200; while (box.childNodes.length > max) box.removeChild(box.firstChild); box.scrollTop = box.scrollHeight; }
-    async function refreshLogs(manual=false){ try{ const limit = Number(document.getElementById('logs-limit').value)||200; const qs = LOGS_LAST_TS ? `?since=${LOGS_LAST_TS}&limit=${limit}` : `?limit=${limit}`; const r = await api('/admin/logs'+qs); const list = (r && r.logs) ? r.logs : []; renderLogs(list, true); setStatus('logs-status', manual ? '已刷新' : '', false); }catch(e){ setStatus('logs-status','获取日志失败', true); } }
-    function startLogsAuto(){ if (!LOGS_TIMER) LOGS_TIMER = setInterval(()=>{ refreshLogs(false); }, 1500); }
-    function stopLogsAuto(){ if (LOGS_TIMER){ clearInterval(LOGS_TIMER); LOGS_TIMER = null; } }
-    async function onClearLogs(){ stopLogsAuto(); try{ await api('/admin/logs/clear', { method:'POST' }); LOGS_LAST_TS = 0; renderLogs([], false); setStatus('logs-status','已清空', false); }catch{ setStatus('logs-status','清空失败', true); } }
-    async function onCopyLogs(){ try{ const box = document.getElementById('logs-list'); const lines = Array.from(box.childNodes).map(n=>n.innerText); await navigator.clipboard.writeText(lines.join('\n')); setStatus('logs-status','已复制', false); }catch{ setStatus('logs-status','复制失败', true); } }
-    window.addEventListener('DOMContentLoaded', async () => { await load(); await loadConfigUI(); const initLimit = Number(document.getElementById('logs-limit').value)||200; const r = await api('/admin/logs?limit=' + initLimit); renderLogs((r&&r.logs)||[], false); document.getElementById('logs-auto').addEventListener('change', (e)=>{ if (e.target.checked) startLogsAuto(); else stopLogsAuto(); }); document.getElementById('logs-level').addEventListener('change', ()=>{ LOGS_LAST_TS = 0; refreshLogs(true); }); });
+    window.addEventListener('DOMContentLoaded', load);
   </script>
+</head>
+<body>
+  <div class="bg-decor" aria-hidden="true"></div>
+  <header>
+    <div class="header-wrap">
+      <div class="brand" role="banner">
+        <div class="logo" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <path d="M4 12h6m4 0h6M12 4v6m0 4v6"/>
+          </svg>
+        </div>
+        <div>
+          <div class="title">SMAI 控制台</div>
+          <div class="sub">OpenAI 兼容网关 · smithery.ai 代理</div>
+        </div>
+      </div>
+      <nav aria-label="快速导航">
+        <a href="#cookies">Cookies</a>
+        <a href="#models">模型</a>
+        <a href="#add">添加模型</a>
+        <a href="#help">帮助</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <div class="layout">
+      <section class="main">
+        <!-- Cookies 管理 -->
+        <div class="card" id="cookies-card">
+          <div class="head">
+            <div class="icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M4 12a8 8 0 1 1 8 8M8 12h.01M12 8h.01M12 16h.01M16 12h.01"/></svg>
+            </div>
+            <div>
+              <div class="title" id="cookies">Cookies 管理（支持多行轮询）</div>
+              <div class="desc">为 smithery.ai 配置多组认证 Cookie。每行填写一条完整 Cookie 串，系统会按顺序轮询使用，提高稳定性与并发能力。保存后立即生效。</div>
+            </div>
+          </div>
+          <div class="grid">
+            <div class="stats">
+              <div class="stat"><div class="k">已配置 Cookies 数</div><div class="v" id="cookies-count">0</div></div>
+              <div class="stat"><div class="k">状态</div><div class="v"><span id="cookies-status" class="status"></span></div></div>
+            </div>
+            <div class="field" aria-label="Cookies 多行输入">
+              <label for="cookies-input">每行一个完整 Cookie 串（示例：k1=v1; k2=v2）</label>
+              <textarea id="cookies-input" placeholder="每行一个 smithery.ai 所需 Cookie"></textarea>
+            </div>
+            <div class="actions">
+              <button class="primary" aria-label="保存 Cookies" onclick="(function(){ const v=document.getElementById('cookies-input').value; document.getElementById('cookies').value=v; onSaveCookies(); })()">保存 Cookies</button>
+              <button class="secondary" aria-label="清空输入" onclick="document.getElementById('cookies-input').value='';">清空</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 模型缓存 -->
+        <div class="card" id="models-card">
+          <div class="head">
+            <div class="icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+            </div>
+            <div>
+              <div class="title" id="models">模型缓存</div>
+              <div class="desc">系统会定期抓取 smithery.ai 的模型清单以便客户端快速查询。您也可以手动刷新或清空本地缓存，确保接口响应及时、数据可靠。</div>
+            </div>
+          </div>
+          <div class="grid">
+            <div class="stats">
+              <div class="stat"><div class="k">模型数量</div><div class="v" id="models-count">0</div></div>
+              <div class="stat"><div class="k">最近操作</div><div class="v" id="last-refresh">—</div></div>
+              <div class="stat"><div class="k">状态</div><div class="v"><span id="models-status" class="status"></span></div></div>
+            </div>
+            <div class="actions">
+              <button class="primary" aria-label="刷新模型" onclick="onRefresh()">在线刷新模型</button>
+              <button class="secondary" aria-label="清空缓存" onclick="onClear()">清空缓存</button>
+            </div>
+            <div class="list" id="models-list" aria-label="模型列表（前120条）"></div>
+          </div>
+        </div>
+
+        <!-- 手动添加模型 -->
+        <div class="card" id="add-card">
+          <div class="head">
+            <div class="icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+            </div>
+            <div>
+              <div class="title" id="add">手动添加模型</div>
+              <div class="desc">当目标站点结构更新、解析暂不可用时，可手动添加模型条目以保障服务正常使用。可选择生成推理衍生后缀，便于客户端快速匹配。</div>
+            </div>
+          </div>
+          <div class="grid two">
+            <div class="field">
+              <label for="model-id">Model ID</label>
+              <input id="model-id" type="text" placeholder="例如：gpt-5-mini" />
+            </div>
+            <div class="field">
+              <label for="model-owned">Owned By</label>
+              <input id="model-owned" type="text" placeholder="例如：openai" />
+            </div>
+            <div class="field" style="align-items:flex-start; gap:10px; flex-direction:row;">
+              <input id="model-reason" type="checkbox" aria-label="支持推理" />
+              <label for="model-reason">支持推理（生成 -minimal/-low/-medium/-high 衍生）</label>
+            </div>
+            <div class="actions">
+              <button class="primary" aria-label="添加模型" onclick="onAddModel()">添加模型</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <aside>
+        <!-- 快速导航与说明 -->
+        <div class="card">
+          <div class="head">
+            <div class="icon" style="background: rgba(139,92,246,0.12); border-color: rgba(139,92,246,0.25);">
+              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="stroke: var(--violet)"><path d="M12 6v12M6 12h12"/></svg>
+            </div>
+            <div>
+              <div class="title">快速导航</div>
+              <div class="desc">直接跳转到页面关键区域，便于快速操作与复核设置，降低错误率并提升效率。</div>
+            </div>
+          </div>
+          <div class="aside-links" aria-label="侧边导航链接">
+            <a href="#cookies">Cookies 管理</a>
+            <a href="#models">模型缓存</a>
+            <a href="#add">手动添加模型</a>
+            <a href="#help">帮助与说明</a>
+          </div>
+        </div>
+
+        <div class="card" id="help">
+          <div class="head">
+            <div class="icon" style="background: rgba(244,63,94,0.12); border-color: rgba(244,63,94,0.25);">
+              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="stroke: var(--rose)"><path d="M12 9v2m0 4h.01M12 5a7 7 0 1 1 0 14a7 7 0 0 1 0-14z"/></svg>
+            </div>
+            <div>
+              <div class="title">帮助与说明</div>
+              <div class="desc">使用多行 Cookies 轮询可提高并发稳定性；建议定期刷新模型缓存以保证列表覆盖最新变更，必要时使用手动添加保障业务连续性。</div>
+            </div>
+          </div>
+          <ul style="margin:0; padding-left:18px; color: var(--muted); line-height:1.8;">
+            <li>每行填写一条完整 Cookie 串，例如：<code>k1=v1; k2=v2</code></li>
+            <li>模型列表最多展示前 120 条，可在客户端进行筛选</li>
+            <li>重要操作均带有明确的状态反馈与动画提示</li>
+            <li>所有交互元素支持键盘导航与焦点高亮</li>
+          </ul>
+          <div style="height:10px"></div>
+          <div class="aside-links">
+            <a href="https://smithery.ai" target="_blank" rel="noopener">smithery.ai</a>
+            <a href="#models" onclick="onRefresh()">立即刷新模型</a>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </main>
+
+  <!-- hidden mirrors for script compatibility -->
+  <textarea id="cookies" style="display:none"></textarea>
 </body>
 </html>

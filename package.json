@@ -1,30 +1,20 @@
 {
-  "name": "smai",
-  "version": "2.0.0",
-  "description": "Smithery API proxy with cookie pool management",
-  "main": "server.js",
+  "name": "smai-proxy",
+  "version": "1.0.0",
+  "description": "OpenAI-compatible proxy to smithery.ai with JSON storage and multi-cookie rotation",
+  "main": "src/index.js",
   "scripts": {
-    "start": "node server.js",
-    "dev": "node server.js",
-    "build": "echo 'No build step required'"
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=18.17"
   },
-  "files": [
-    "src/**/*",
-    "server.js",
-    "config.json",
-    "public/**/*"
-  ],
-  "dependencies": {},
-  "keywords": [
-    "api",
-    "proxy",
-    "smithery",
-    "openai",
-    "cookie-management"
-  ],
-  "author": "",
-  "license": "MIT"
+  "dependencies": {
+    "express": "^4.19.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.0"
+  }
 }
+
