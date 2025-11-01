@@ -13,22 +13,105 @@ function isDataUrl(u) {
 
 function convertContentItemToPart(it) {
   if (!it || typeof it !== 'object' || !it.type) return null;
-  if (it.type === 'text') return {
-    type: 'text',
-    text: it.text || ''
+
+  // Text
+  if (it.type === 'text' || it.type === 'input_text') {
+    return { type: 'text', text: it.text || it.input_text || '' };
+  }
+
+  // Helpers for filename/media type inference
+  const inferExt = (mt) => {
+    const map = {
+      'image/png': 'png', 'image/jpeg': 'jpg', 'image/jpg': 'jpg', 'image/gif': 'gif', 'image/webp': 'webp', 'image/svg+xml': 'svg',
+      'application/pdf': 'pdf', 'text/plain': 'txt', 'text/markdown': 'md', 'application/json': 'json',
+      'audio/mpeg': 'mp3', 'audio/mp3': 'mp3', 'audio/wav': 'wav', 'audio/x-wav': 'wav', 'audio/webm': 'webm', 'audio/ogg': 'ogg',
+      'video/mp4': 'mp4', 'video/webm': 'webm', 'video/ogg': 'ogv', 'application/zip': 'zip', 'application/x-zip-compressed': 'zip'
+    };
+    return map[mt] || '';
   };
-  if (it.type === 'image_url') {
-    const u = it.image_url && it.image_url.url;
+  const inferNameFromUrl = (u, mt) => {
+    try {
+      const url = new URL(u);
+      const base = url.pathname.split('/').filter(Boolean).pop() || '';
+      if (base) return base;
+    } catch {}
+    const ext = inferExt(mt);
+    const base = ext ? `file.${ext}` : 'file.bin';
+    return base;
+  };
+
+  // Normalize a generic URL or data for different item shapes into a { url, mediaType, filename }
+  const buildFilePart = (u, mediaTypeHint, nameHint) => {
+    if (!u) return null;
+    let mediaType = mediaTypeHint || '';
+    let filename = nameHint || '';
     if (isDataUrl(u)) {
-      const mediaType = u.split(';')[0].split(':')[1] || 'image/png';
-      return {
-        type: 'file',
-        mediaType,
-        filename: 'image.png',
-        url: u
-      };
+      mediaType = mediaType || (u.split(';')[0].split(':')[1] || 'application/octet-stream');
+      if (!filename) filename = `file.${inferExt(mediaType) || 'bin'}`;
+    } else {
+      if (!filename) filename = inferNameFromUrl(u, mediaType || '');
+    }
+    const part = { type: 'file', url: u };
+    if (mediaType) part.mediaType = mediaType;
+    if (filename) part.filename = filename;
+    return part;
+  };
+
+  // 1) image_url (standard OpenAI schema)
+  if (it.type === 'image_url') {
+    const u = (it.image_url && (it.image_url.url || it.image_url)) || it.url;
+    // Pass through remote URLs; include mediaType for data URLs
+    return buildFilePart(u, '', '');
+  }
+
+  // 2) input_image (newer schema variant)
+  if (it.type === 'input_image') {
+    // Either data:URL in it.image_url.url or raw {data, format}
+    const u1 = it.image_url && (it.image_url.url || it.image_url);
+    if (u1) return buildFilePart(u1, '', '');
+    const img = it.image || {};
+    if (img.data) {
+      const fmt = (img.format || 'png').toLowerCase();
+      const mt = fmt.includes('/') ? fmt : `image/${fmt}`;
+      const u = `data:${mt};base64,${img.data}`;
+      return buildFilePart(u, mt, `image.${inferExt(mt) || fmt}`);
     }
   }
+
+  // 3) Generic file by URL
+  if (it.type === 'file_url' || it.type === 'file') {
+    const fu = it.file_url || it.url || (it.file && (it.file.url || it.file));
+    const mt = it.mediaType || (it.file && it.file.mediaType) || '';
+    const name = it.filename || (it.file && it.file.name) || '';
+    return buildFilePart(fu, mt, name);
+  }
+
+  // 4) Audio input (construct data URL if base64 provided)
+  if (it.type === 'input_audio' || it.type === 'audio') {
+    const au = it.audio || {};
+    if (au.data) {
+      const fmt = (au.format || 'mp3').toLowerCase();
+      const mt = fmt.includes('/') ? fmt : `audio/${fmt}`;
+      const u = `data:${mt};base64,${au.data}`;
+      return buildFilePart(u, mt, `audio.${inferExt(mt) || fmt}`);
+    }
+    const u = it.audio_url && (it.audio_url.url || it.audio_url);
+    if (u) return buildFilePart(u, '', '');
+  }
+
+  // 5) Video input (optional)
+  if (it.type === 'input_video' || it.type === 'video') {
+    const v = it.video || {};
+    if (v.data) {
+      const fmt = (v.format || 'mp4').toLowerCase();
+      const mt = fmt.includes('/') ? fmt : `video/${fmt}`;
+      const u = `data:${mt};base64,${v.data}`;
+      return buildFilePart(u, mt, `video.${inferExt(mt) || fmt}`);
+    }
+    const u = it.video_url && (it.video_url.url || it.video_url);
+    if (u) return buildFilePart(u, '', '');
+  }
+
   return null;
 }
 
