@@ -157,6 +157,26 @@
     function setStat(id, val){
       const el=document.getElementById(id); if (el) el.textContent = String(val);
     }
+    async function loadCookies(){
+      try{
+        const ck = await api('/admin/cookies');
+        const arr = Array.isArray(ck.cookies) ? ck.cookies : [];
+        setStat('cookies-count', arr.length);
+        const ul = document.getElementById('cookies-list'); ul.innerHTML='';
+        arr.forEach((c,i)=>{
+          const div=document.createElement('div');
+          div.style.cssText='display:flex;gap:8px;align-items:center;padding:6px;border-bottom:1px solid rgba(2,6,23,0.06)';
+          const txt=document.createElement('span');
+          txt.textContent=c.substring(0,50)+(c.length>50?'...':'');
+          txt.style.cssText='flex:1;font-size:12px;color:var(--muted)';
+          const btn=document.createElement('button');
+          btn.textContent='删除';
+          btn.style.cssText='padding:4px 8px;font-size:11px';
+          btn.onclick=()=>onDeleteCookie(i);
+          div.appendChild(txt); div.appendChild(btn); ul.appendChild(div);
+        });
+      }catch(e){ setStatus('cookies-status', '读取失败', true); }
+    }
     async function load(){
       try{
         const ms = await api('/v1/models');
@@ -166,18 +186,24 @@
         list.slice(0, 120).forEach(x=>{ const s=document.createElement('span'); s.className='pill'; s.innerHTML='<span class="dot"></span>'+x.id; ul.appendChild(s); });
         setStat('last-refresh', new Date().toLocaleString());
       }catch(e){ setStatus('models-status', '获取模型失败', true); }
-      try{
-        const ck = await api('/admin/cookies');
-        const arr = Array.isArray(ck.cookies) ? ck.cookies : [];
-        document.getElementById('cookies').value = arr.join('\n');
-        setStat('cookies-count', arr.length);
-      }catch(e){ setStatus('cookies-status', '读取 Cookies 失败', true); }
+      await loadCookies();
     }
-    async function onSaveCookies(){
-      const cookies = document.getElementById('cookies').value.trim();
-      const r = await api('/admin/cookies',{method:'POST',body:JSON.stringify({cookies})});
-      setStatus('cookies-status', r.ok?('已保存，多条：'+r.count):'保存失败', !r.ok);
-      if (r.ok) setStat('cookies-count', r.count||0);
+    async function onAddCookie(){
+      const c = document.getElementById('new-cookie').value.trim();
+      if(!c){ setStatus('cookies-status','请输入Cookie',true); return; }
+      const r = await api('/admin/cookies/add',{method:'POST',body:JSON.stringify({cookie:c})});
+      setStatus('cookies-status', r.ok?'已添加':'添加失败', !r.ok);
+      if(r.ok){ document.getElementById('new-cookie').value=''; await loadCookies(); }
+    }
+    async function onDeleteCookie(idx){
+      const r = await api('/admin/cookies/delete',{method:'POST',body:JSON.stringify({index:idx})});
+      setStatus('cookies-status', r.ok?'已删除':'删除失败', !r.ok);
+      if(r.ok) await loadCookies();
+    }
+    async function onDetectCookies(){
+      setStatus('cookies-status','检测中...');
+      const r = await api('/admin/cookies/detect',{method:'POST'});
+      setStatus('cookies-status', r.ok?r.message:'检测失败', !r.ok);
     }
     async function onRefresh(){
       setStatus('models-status','刷新中...');
@@ -236,8 +262,8 @@
               <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M4 12a8 8 0 1 1 8 8M8 12h.01M12 8h.01M12 16h.01M16 12h.01"/></svg>
             </div>
             <div>
-              <div class="title" id="cookies">Cookies 管理（支持多行轮询）</div>
-              <div class="desc">为 smithery.ai 配置多组认证 Cookie。每行填写一条完整 Cookie 串，系统会按顺序轮询使用，提高稳定性与并发能力。保存后立即生效。</div>
+              <div class="title" id="cookies">Cookies 管理</div>
+              <div class="desc">管理 smithery.ai 认证 Cookie，支持添加、删除和检测功能。</div>
             </div>
           </div>
           <div class="grid">
@@ -245,14 +271,15 @@
               <div class="stat"><div class="k">已配置 Cookies 数</div><div class="v" id="cookies-count">0</div></div>
               <div class="stat"><div class="k">状态</div><div class="v"><span id="cookies-status" class="status"></span></div></div>
             </div>
-            <div class="field" aria-label="Cookies 多行输入">
-              <label for="cookies-input">每行一个完整 Cookie 串（示例：k1=v1; k2=v2）</label>
-              <textarea id="cookies-input" placeholder="每行一个 smithery.ai 所需 Cookie"></textarea>
+            <div class="field">
+              <label for="new-cookie">添加新 Cookie</label>
+              <input id="new-cookie" type="text" placeholder="输入完整 Cookie 串" />
             </div>
             <div class="actions">
-              <button class="primary" aria-label="保存 Cookies" onclick="(function(){ const v=document.getElementById('cookies-input').value; document.getElementById('cookies').value=v; onSaveCookies(); })()">保存 Cookies</button>
-              <button class="secondary" aria-label="清空输入" onclick="document.getElementById('cookies-input').value='';">清空</button>
+              <button class="primary" onclick="onAddCookie()">添加 Cookie</button>
+              <button class="secondary" onclick="onDetectCookies()">检测 Cookies</button>
             </div>
+            <div class="list" id="cookies-list" aria-label="Cookies 列表"></div>
           </div>
         </div>
 
@@ -357,8 +384,5 @@
       </aside>
     </div>
   </main>
-
-  <!-- hidden mirrors for script compatibility -->
-  <textarea id="cookies" style="display:none"></textarea>
 </body>
 </html>

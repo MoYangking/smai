@@ -37,6 +37,23 @@ function setCookies(input) {
   return { ok: true, count: curr.cookies.length };
 }
 
+function addCookie(cookie) {
+  if (!cookie || !cookie.trim()) return { ok: false };
+  const curr = readCookiesFile();
+  curr.cookies.push(cookie.trim());
+  writeCookiesFile(curr);
+  return { ok: true, count: curr.cookies.length };
+}
+
+function deleteCookie(index) {
+  const curr = readCookiesFile();
+  if (index < 0 || index >= curr.cookies.length) return { ok: false };
+  curr.cookies.splice(index, 1);
+  if (curr.index >= curr.cookies.length) curr.index = 0;
+  writeCookiesFile(curr);
+  return { ok: true, count: curr.cookies.length };
+}
+
 function pickCookieRoundRobin() {
   const curr = readCookiesFile();
   const list = curr.cookies || [];
@@ -52,6 +69,8 @@ function pickCookieRoundRobin() {
 module.exports = {
   getCookiesList,
   setCookies,
+  addCookie,
+  deleteCookie,
   pickCookieRoundRobin
 };
 
